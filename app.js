@@ -1,4 +1,4 @@
-// Cicero LLM browser inference (curriculum-tuned, int8 ONNX, ORT-Web + Transformers.js tokenizer)
+// Cicero LLM browser inference (MAX-V5, int8 ONNX, ORT-Web + Transformers.js tokenizer)
 //
 // Stack:
 //   - onnxruntime-web (1.20+) for the ONNX model inference (WebGPU when available)

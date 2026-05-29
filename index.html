@@ -50,7 +50,7 @@
 <body>
 <h1>Cicero LLM</h1>
 <p class="sub">100M-parameter Latin language model, trained from scratch, running locally in your browser.<br>
-Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.</p>
+Canonical cloze 0.804 — first model in this project to clear the 0.75 stretch goal.</p>
 
 <textarea id="prompt" rows="3" placeholder="Type Latin here…">Gallia est omnis divisa</textarea>
 
@@ -68,15 +68,9 @@ Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.<
 <details>
   <summary>About</summary>
   <p>Decoder-only transformer, ~111M params, trained from scratch on a 466M-token
-  Latin corpus over 30,000 steps, then continued-pretrained on a targeted
-  classical-grammar curriculum (Cicero-register synthetic prose, generated and
-  quality-filtered by a stronger model) mixed 30/70 with clean classical replay.
-  Tokenizer is a 32K SentencePiece BPE trained on the same corpus.
-  Held-out (blind) cloze 0.72, literary 0.82, weakness-set 0.82. The curriculum
-  step measurably improved held-out, literary, and grammar-probe accuracy and —
-  more visibly — cut the medieval/neo-Latin contamination and repetition that the
-  base model fell into, in exchange for a few points on an in-distribution
-  textbook-cloze set.</p>
+  Latin corpus (v5 maximalist mix) over 30,000 steps with dropout 0.15. Tokenizer
+  is a 32K SentencePiece BPE trained on the same corpus. Canonical cloze 0.804;
+  literary cloze 0.746; held-out (blind) cloze 0.688.</p>
   <p>The model file is <code>model.int8.onnx</code> (~136 MB, int8-quantized).
   Inference runs entirely client-side via ONNX Runtime Web with WebGPU acceleration
   when available (falls back to WASM). First load is slow — the model needs to download
