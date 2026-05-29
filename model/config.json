@@ -1,0 +1,10 @@
+{
+  "model_type": "cicero-gpt",
+  "vocab_size": 32000,
+  "n_layer": 12,
+  "n_head": 12,
+  "n_embd": 768,
+  "block_size": 2048,
+  "tokenizer": "sentencepiece-bpe-32k (cicero_sp_32000)",
+  "source": "Run B / curriculum-tuned (step 33000): MAX-V5 + targeted grammar curriculum, 30/70 replay. Blind cloze 0.722, literary 0.821."
+}

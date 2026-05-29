@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Cicero LLM</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --fg: #1a1a1a;
+    --bg: #fafaf7;
+    --accent: #6f4e37;
+    --muted: #888;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fg: #eee; --bg: #1c1c1c; --accent: #c79f6b; --muted: #777; }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--fg); background: var(--bg);
+    max-width: 760px; margin: 2em auto; padding: 0 1em; line-height: 1.5;
+  }
+  h1 { color: var(--accent); margin-bottom: 0.1em; }
+  .sub { color: var(--muted); margin-top: 0; font-size: 0.95em; }
+  textarea, #output {
+    width: 100%; box-sizing: border-box;
+    font-family: "Times New Roman", Georgia, serif; font-size: 1.05em;
+    padding: 0.7em; border-radius: 4px; border: 1px solid #ccc;
+    background: white; color: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    textarea, #output { background: #2a2a2a; color: #eee; border-color: #444; }
+  }
+  textarea { resize: vertical; }
+  #output { min-height: 6em; white-space: pre-wrap; }
+  .controls { margin: 0.8em 0; display: flex; gap: 1em; align-items: center; flex-wrap: wrap; }
+  .controls label { display: flex; align-items: center; gap: 0.4em; font-size: 0.9em; }
+  .controls input[type=number] { width: 4em; }
+  button {
+    padding: 0.5em 1.2em; font-size: 1em; cursor: pointer;
+    background: var(--accent); color: white; border: none; border-radius: 4px;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status { color: var(--muted); font-size: 0.85em; margin-top: 0.5em; min-height: 1.2em; }
+  .err { color: #c44; }
+  .generated { color: var(--accent); }
+  details { margin-top: 1.5em; font-size: 0.85em; color: var(--muted); }
+  code { background: rgba(127,127,127,0.15); padding: 0.1em 0.4em; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Cicero LLM</h1>
+<p class="sub">100M-parameter Latin language model, trained from scratch, running locally in your browser.<br>
+Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.</p>
+
+<textarea id="prompt" rows="3" placeholder="Type Latin here…">Gallia est omnis divisa</textarea>
+
+<div class="controls">
+  <label>tokens: <input type="number" id="ntokens" value="50" min="1" max="300"></label>
+  <label>temperature: <input type="number" id="temp" value="0.8" min="0.1" max="2.0" step="0.1"></label>
+  <label>top-k: <input type="number" id="topk" value="40" min="1" max="200"></label>
+  <button id="go" disabled>Generate</button>
+  <button id="stop" disabled>Stop</button>
+</div>
+
+<div id="output"></div>
+<div id="status">Loading model…</div>
+
+<details>
+  <summary>About</summary>
+  <p>Decoder-only transformer, ~111M params, trained from scratch on a 466M-token
+  Latin corpus over 30,000 steps, then continued-pretrained on a targeted
+  classical-grammar curriculum (Cicero-register synthetic prose, generated and
+  quality-filtered by a stronger model) mixed 30/70 with clean classical replay.
+  Tokenizer is a 32K SentencePiece BPE trained on the same corpus.
+  Held-out (blind) cloze 0.72, literary 0.82, weakness-set 0.82. The curriculum
+  step measurably improved held-out, literary, and grammar-probe accuracy and —
+  more visibly — cut the medieval/neo-Latin contamination and repetition that the
+  base model fell into, in exchange for a few points on an in-distribution
+  textbook-cloze set.</p>
+  <p>The model file is <code>model.int8.onnx</code> (~136 MB, int8-quantized).
+  Inference runs entirely client-side via ONNX Runtime Web with WebGPU acceleration
+  when available (falls back to WASM). First load is slow — the model needs to download
+  and compile — subsequent prompts run from cache.</p>
+  <p>This is a research artifact, not a polished product. Generations are autoregressive
+  with temperature + top-k sampling; no chat tuning, no instruction following.</p>
+</details>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

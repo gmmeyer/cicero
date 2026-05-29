@@ -1,0 +1,4 @@
+# The int8 ONNX weights (~136 MB) exceed GitHub's 100 MB file limit and are
+# served as a GitHub Release asset, not committed. Keep them out of the repo.
+model/*.onnx
+*.onnx
