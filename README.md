@@ -9,15 +9,17 @@ Live: https://cicerollm.com
 ## What it is
 
 - Decoder-only transformer, ~111M params (12 layers x 12 heads x 768 dim)
-- Trained from a random init on a ~466M-token Latin corpus (v5 maximalist mix),
-  30,000 steps, dropout 0.15 (no pretrained backbone, no English/Greek base)
+- Trained from a random init on a ~466M-token Latin corpus (no pretrained
+  backbone, no English/Greek base), then continued-pretrained on a targeted
+  classical-grammar curriculum mixed 30/70 with clean classical replay
 - 32K SentencePiece-BPE tokenizer trained on the same corpus
-- Canonical cloze **0.804** (first checkpoint to clear the 0.75 stretch goal);
-  literary **0.746**; held-out (blind) **0.688**
+- Held-out (blind) cloze **0.72**, literary **0.82**, grammar-probe set **0.82**
 
 It's a research artifact: autoregressive completion with temperature + top-k
-sampling. No instruction tuning, no chat behavior — give it Latin and it
-continues in Latin.
+sampling and a repetition penalty. No instruction tuning, no chat behavior —
+give it Latin and it continues in Latin. The curriculum-tuning step pushes
+generation toward classical register and away from the medieval/neo-Latin
+contamination of the base model.
 
 ## Running it
 

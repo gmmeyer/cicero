@@ -1,4 +1,4 @@
-// Cicero LLM browser inference (MAX-V5, int8 ONNX, ORT-Web + Transformers.js tokenizer)
+// Cicero LLM browser inference (curriculum-tuned, int8 ONNX, ORT-Web + Transformers.js tokenizer)
 //
 // Stack:
 //   - onnxruntime-web (1.20+) for the ONNX model inference (WebGPU when available)
@@ -123,13 +123,49 @@ async function loadAll() {
   }
 }
 
-// Sample next token from logits using temperature + top-k.
-function sampleNext(logits, temperature, topK) {
+// Window (in tokens) over which the repetition penalty looks back.
+const REP_WINDOW = 128;
+// no-repeat n-gram size: never emit a token that completes an already-seen n-gram.
+const NO_REPEAT_NGRAM = 3;
+
+// Sample next token from logits using temperature + top-k, with a
+// repetition penalty (Keskar et al.) over recent tokens and a hard
+// no-repeat-n-gram block to kill verbatim loops.
+//   - recentIds: the full id sequence so far (prompt + generated)
+//   - repPenalty: θ ≥ 1.0; logits of recently-seen tokens are divided by θ
+//     (when positive) / multiplied (when negative). 1.0 = off.
+function sampleNext(logits, temperature, topK, recentIds, repPenalty) {
   // logits is a Float32Array of length vocab_size
-  // Apply temperature
   const t = Math.max(temperature, 1e-3);
   const scaled = new Float32Array(logits.length);
   for (let i = 0; i < logits.length; i++) scaled[i] = logits[i] / t;
+
+  // Repetition penalty: down-weight tokens seen in the recent window.
+  if (repPenalty && repPenalty > 1.0 && recentIds && recentIds.length) {
+    const start = Math.max(0, recentIds.length - REP_WINDOW);
+    const seen = new Set();
+    for (let i = start; i < recentIds.length; i++) seen.add(recentIds[i]);
+    for (const id of seen) {
+      if (id < 0 || id >= scaled.length) continue;
+      scaled[id] = scaled[id] > 0 ? scaled[id] / repPenalty
+                                  : scaled[id] * repPenalty;
+    }
+  }
+
+  // No-repeat n-gram: if the last (n-1) tokens match the prefix of an
+  // n-gram already generated, ban the token that completed it.
+  if (NO_REPEAT_NGRAM > 0 && recentIds && recentIds.length >= NO_REPEAT_NGRAM) {
+    const n = NO_REPEAT_NGRAM;
+    const prefix = recentIds.slice(recentIds.length - (n - 1)).join(',');
+    for (let i = 0; i + n <= recentIds.length; i++) {
+      const gramPrefix = recentIds.slice(i, i + n - 1).join(',');
+      if (gramPrefix === prefix) {
+        const banned = recentIds[i + n - 1];
+        if (banned >= 0 && banned < scaled.length) scaled[banned] = -Infinity;
+      }
+    }
+  }
+
   // Top-k: get the k largest indices
   const k = Math.min(topK, scaled.length);
   // simple partial sort: find top-k
@@ -165,6 +201,8 @@ async function generate() {
   const ntokens = parseInt(document.getElementById('ntokens').value, 10);
   const temperature = parseFloat(document.getElementById('temp').value);
   const topK = parseInt(document.getElementById('topk').value, 10);
+  const repEl = document.getElementById('reppenalty');
+  const repPenalty = repEl ? parseFloat(repEl.value) : 1.2;
 
   const blockSize = 2048;
 
@@ -194,7 +232,7 @@ async function generate() {
     const t0 = performance.now();
     const outputs = await session.run({ input_ids: tensor });
     const logits = outputs.logits.data;  // Float32Array (V,)
-    const next = sampleNext(logits, temperature, topK);
+    const next = sampleNext(logits, temperature, topK, ids, repPenalty);
 
     // Stop on EOS (</s>) — the model emits it at a natural end of text.
     if (next === EOS_ID) {
