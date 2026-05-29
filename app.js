@@ -31,6 +31,12 @@ const HF_MODEL_URL =
 const MODEL_URL =
   new URLSearchParams(location.search).get('model') || HF_MODEL_URL;
 
+// SentencePiece special-token ids (fixed by the cicero_sp_32000 tokenizer):
+// <unk>=0, <s>=1 (BOS), </s>=2 (EOS). transformers.js leaves eos_token_id null
+// here because tokenizer.json has an empty added_tokens list, so we pin the id.
+const BOS_ID = 1;
+const EOS_ID = 2;
+
 const statusEl = document.getElementById('status');
 const outputEl = document.getElementById('output');
 const promptEl = document.getElementById('prompt');
@@ -90,15 +96,19 @@ async function loadAll() {
     const modelBytes = await fetchModelBytes();
 
     setStatus('Compiling model…');
-    // Create the session from the in-memory bytes; try WebGPU, fall back
-    // to WASM. Both attempts reuse modelBytes (no second download).
+    // Execution provider: default to WASM. ORT-Web's WebGPU backend produces
+    // garbage logits for this model (verified: the same ONNX generates coherent
+    // Latin on CPU/WASM but token-salad under WebGPU), so WebGPU is opt-in only
+    // via ?gpu=1. Both attempts reuse modelBytes (no second download).
+    const wantGpu = new URLSearchParams(location.search).get('gpu') === '1';
+    const providers = wantGpu ? ['webgpu', 'wasm'] : ['wasm'];
     try {
       session = await ort.InferenceSession.create(modelBytes, {
-        executionProviders: ['webgpu', 'wasm'],
+        executionProviders: providers,
         graphOptimizationLevel: 'all',
       });
     } catch (e) {
-      console.warn('WebGPU init failed, falling back to WASM:', e);
+      console.warn('Primary EP init failed, falling back to WASM:', e);
       session = await ort.InferenceSession.create(modelBytes, {
         executionProviders: ['wasm'],
         graphOptimizationLevel: 'all',
@@ -162,8 +172,8 @@ async function generate() {
   const encoded = await tokenizer(prompt, { add_special_tokens: false });
   let ids = Array.from(encoded.input_ids.data, x => Number(x));
   // BOS prepend to match training (sentencepiece convention)
-  if (tokenizer.bos_token_id != null && ids[0] !== tokenizer.bos_token_id) {
-    ids = [tokenizer.bos_token_id, ...ids];
+  if (ids[0] !== BOS_ID) {
+    ids = [BOS_ID, ...ids];
   }
 
   outputEl.textContent = prompt;
@@ -186,9 +196,9 @@ async function generate() {
     const logits = outputs.logits.data;  // Float32Array (V,)
     const next = sampleNext(logits, temperature, topK);
 
-    // Stop on EOS — restart on a fresh sentence rather than streaming through.
-    if (tokenizer.eos_token_id != null && next === tokenizer.eos_token_id) {
-      setStatus(`Hit EOS at token ${nGenerated}. Stopping.`);
+    // Stop on EOS (</s>) — the model emits it at a natural end of text.
+    if (next === EOS_ID) {
+      setStatus(`Reached end of text (</s>) after ${nGenerated} tokens.`);
       break;
     }
 
