@@ -49,7 +49,7 @@
 </head>
 <body>
 <h1>Cicero LLM</h1>
-<p class="sub">100M-parameter Latin language model, trained from scratch, running locally in your browser.<br>
+<p class="sub">100M-class Latin language model, trained from scratch, running locally in your browser.<br>
 Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.</p>
 
 <textarea id="prompt" rows="3" placeholder="Type Latin here…">Gallia est omnis divisa</textarea>
@@ -77,9 +77,10 @@ Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.<
   step pushes generation toward classical register and reduces the medieval/
   neo-Latin contamination and repetition of the base model.</p>
   <p>The model file is <code>model.int8.onnx</code> (~136 MB, int8-quantized).
-  Inference runs entirely client-side via ONNX Runtime Web with WebGPU acceleration
-  when available (falls back to WASM). First load is slow — the model needs to download
-  and compile — subsequent prompts run from cache.</p>
+  Inference runs entirely client-side via ONNX Runtime Web. The default backend
+  is WASM because WebGPU produced bad logits for this model path; WebGPU remains
+  opt-in with <code>?gpu=1</code>. First load is slow — the model needs to
+  download and compile — subsequent prompts run from cache.</p>
   <p>This is a research artifact, not a polished product. Generations are autoregressive
   with temperature + top-k sampling; no chat tuning, no instruction following.</p>
 </details>

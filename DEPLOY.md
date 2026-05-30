@@ -1,8 +1,9 @@
 # Deploying the Cicero LLM site (GitHub Pages)
 
 Static, no build step. Browser-side inference via ONNX Runtime Web +
-Transformers.js (both from CDN). The only artifact that isn't in this repo is
-the model binary — see step 2.
+Transformers.js (both from CDN). The deployed default backend is WASM; WebGPU is
+kept opt-in with `?gpu=1` because it produced bad logits for this model path.
+The only artifact that isn't in this repo is the model binary — see step 2.
 
 ## 1. Enable GitHub Pages
 

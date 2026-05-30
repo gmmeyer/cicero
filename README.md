@@ -1,8 +1,9 @@
 # Cicero LLM
 
-A 100M-parameter Latin language model, trained from scratch, running entirely
-in your browser. No server, no API — the int8-quantized model downloads once
-and runs client-side via ONNX Runtime Web (WebGPU, with a WASM fallback).
+A 100M-class Latin language model, trained from scratch, running entirely in
+your browser. No server, no API — the int8-quantized model downloads once and
+runs client-side via ONNX Runtime Web. The default backend is WASM; WebGPU is
+available only as an opt-in experiment with `?gpu=1`.
 
 Live: https://cicerollm.com
 
