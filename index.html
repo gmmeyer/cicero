@@ -21,6 +21,7 @@
   }
   h1 { color: var(--accent); margin-bottom: 0.1em; }
   .sub { color: var(--muted); margin-top: 0; font-size: 0.95em; }
+  a { color: var(--accent); }
   textarea, #output {
     width: 100%; box-sizing: border-box;
     font-family: "Times New Roman", Georgia, serif; font-size: 1.05em;
@@ -50,7 +51,8 @@
 <body>
 <h1>Cicero LLM</h1>
 <p class="sub">100M-class Latin language model, trained from scratch, running locally in your browser.<br>
-Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.</p>
+Curriculum-tuned for classical register — held-out cloze 0.72, literary 0.82.<br>
+<a href="blog.html">Read how it was built &rarr;</a></p>
 
 <textarea id="prompt" rows="3" placeholder="Type Latin here…">Gallia est omnis divisa</textarea>
 
